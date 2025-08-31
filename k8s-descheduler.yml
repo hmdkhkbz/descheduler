@@ -1,0 +1,5 @@
+- name: Deploy Kubernetes Descheduler via Helm
+  hosts: local
+  gather_facts: false
+  roles:
+    - role: descheduler

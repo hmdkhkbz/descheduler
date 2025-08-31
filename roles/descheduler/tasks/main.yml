@@ -1,0 +1,75 @@
+- name: Ensure target namespace exists
+  kubernetes.core.k8s:
+    state: present
+    kind: Namespace
+    api_version: v1
+    name: "{{ descheduler_namespace }}"
+
+- name: Render Helm values for descheduler
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: "{{ playbook_dir }}/.generated_descheduler_values.yaml"
+    mode: "0644"
+
+- name: Deploy/upgrade descheduler via Helm
+  kubernetes.core.helm:
+    name: "{{ descheduler_release_name }}"
+    chart_ref: "{{ descheduler_chart_ref }}"
+    chart_version: "{{ descheduler_chart_version | default(omit) }}"
+    release_namespace: "{{ descheduler_namespace }}"
+    create_namespace: true
+    wait: "{{ descheduler_wait }}"
+    atomic: "{{ descheduler_atomic }}"
+    values_files:
+      - "{{ playbook_dir }}/.generated_descheduler_values.yaml"
+    repo_url: "{{ descheduler_chart_repo_url }}"
+    state: present
+  register: helm_result
+
+- name: Show what Helm changed (if anything)
+  ansible.builtin.debug:
+    var: helm_result
+  when: helm_result is changed
+
+- name: Fetch the descheduler CronJob
+  kubernetes.core.k8s_info:
+    api_version: batch/v1
+    kind: CronJob
+    namespace: "{{ descheduler_namespace }}"
+    name: "{{ descheduler_release_name }}"
+  register: cronjob_info
+
+- name: Assert CronJob exists and schedule matches
+  ansible.builtin.assert:
+    that:
+      - cronjob_info.resources | length == 1
+      - cronjob_info.resources.0.spec.schedule == descheduler_schedule
+      - (cronjob_info.resources.0.spec.suspend | default(false)) == false
+    fail_msg: "Descheduler CronJob not found or misconfigured"
+    success_msg: "Descheduler CronJob present with expected schedule"
+
+- name: Trigger one-off run from CronJob
+  when: descheduler_trigger_once | default(false) | bool
+  block:
+    - name: Create Job from CronJob
+      ansible.builtin.shell: |
+        set -euo pipefail
+        kubectl -n "{{ descheduler_namespace }}" create job \
+          "{{ descheduler_release_name }}-manual-{{ lookup('ansible.builtin.pipe','date +%s') }}" \
+          --from=cronjob/{{ descheduler_release_name }}
+      args:
+        executable: /bin/bash
+
+    - name: Wait for latest job pod to complete
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ descheduler_namespace }}"
+        label_selectors:
+          - "job-name in ({{ descheduler_release_name }}-manual)"
+      register: job_pods
+      retries: 30
+      delay: 10
+      until: >
+        job_pods.resources | selectattr('status.phase','defined')
+        | selectattr('status.phase','in',['Succeeded','Failed']) | list | length > 0

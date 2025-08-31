@@ -1,0 +1,57 @@
+schedule: "{{ descheduler_schedule }}"
+
+cmdOptions:
+  v: {{ descheduler_log_verbosity }}
+  dry-run: {{ descheduler_dry_run | bool }}
+  {% if descheduler_evict_local_storage_pods %}evict-local-storage-pods: true{% endif %}
+
+tolerations:
+{% for tol in descheduler_tolerations %}
+  - {{ tol | to_nice_yaml(indent=4) | trim }}
+{% endfor %}
+
+resources:
+  {{ descheduler_resources | to_nice_yaml(indent=2) | trim }}
+
+deschedulerPolicy:
+  evictableNamespaces:
+    exclude:
+{% for ns in descheduler_excluded_namespaces %}
+      - {{ ns }}
+{% endfor %}
+
+  strategies:
+
+    LowNodeUtilization:
+      enabled: true
+      params:
+        nodeResourceUtilizationThresholds:
+          {{ descheduler_low_utilization_thresholds | to_nice_yaml(indent=10) | trim }}
+
+    RemovePodsViolatingNodeAffinity:
+      enabled: true
+      params:
+        nodeAffinityType:
+          - requiredDuringSchedulingIgnoredDuringExecution
+
+    RemovePodsViolatingNodeTaints:
+      enabled: true
+
+    RemovePodsViolatingInterPodAntiAffinity:
+      enabled: true
+
+    RemovePodsViolatingTopologySpreadConstraint:
+      enabled: true
+      params:
+        constraints:
+          - DoNotSchedule
+
+    RemoveDuplicates:
+      enabled: true
+
+    RemovePodsHavingTooManyRestarts:
+      enabled: true
+      params:
+        podsHavingTooManyRestarts:
+          podRestartThreshold: {{ descheduler_pod_restart_threshold }}
+          includingInitContainers: {{ descheduler_including_init_containers | bool }}

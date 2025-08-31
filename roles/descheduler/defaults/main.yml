@@ -1,0 +1,47 @@
+descheduler_namespace: kube-system
+descheduler_release_name: descheduler
+descheduler_chart_repo_url: "https://kubernetes-sigs.github.io/descheduler/"
+descheduler_chart_ref: "descheduler/descheduler"
+descheduler_chart_version: ""   
+descheduler_wait: true
+descheduler_atomic: true
+
+descheduler_schedule: "*/30 * * * *"
+descheduler_dry_run: false     
+descheduler_log_verbosity: 2
+
+descheduler_resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+descheduler_excluded_namespaces:
+  - kube-system
+  - kube-public
+  - kube-node-lease
+
+descheduler_low_utilization_thresholds:
+  thresholds:
+    cpu: 20
+    memory: 20
+    pods: 20
+  targetThresholds:
+    cpu: 60
+    memory: 60
+    pods: 60
+
+descheduler_pod_restart_threshold: 5
+descheduler_including_init_containers: true
+
+descheduler_evict_local_storage_pods: false
+
+descheduler_tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"

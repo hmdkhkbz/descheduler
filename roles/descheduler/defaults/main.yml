@@ -1,14 +1,20 @@
 descheduler_namespace: kube-system
 descheduler_release_name: descheduler
 descheduler_chart_repo_url: "https://kubernetes-sigs.github.io/descheduler/"
-descheduler_chart_ref: "descheduler/descheduler"
-descheduler_chart_version: ""   
+descheduler_chart_ref: "descheduler"
+descheduler_chart_version: ""  
 descheduler_wait: true
 descheduler_atomic: true
 
+descheduler_kind: CronJob
+
+descheduler_image_repo: "registry.k8s.io/descheduler/descheduler"
+descheduler_image_tag: ""              
+descheduler_image_pull_policy: IfNotPresent
+
 descheduler_schedule: "*/30 * * * *"
-descheduler_dry_run: false     
-descheduler_log_verbosity: 2
+descheduler_dry_run: false
+descheduler_log_verbosity: 3
 
 descheduler_resources:
   requests:
@@ -23,17 +29,15 @@ descheduler_excluded_namespaces:
   - kube-public
   - kube-node-lease
 
-descheduler_low_utilization_thresholds:
-  thresholds:
-    cpu: 20
-    memory: 20
-    pods: 20
-  targetThresholds:
-    cpu: 60
-    memory: 60
-    pods: 60
+cpu_low_utilization_threshold: 20
+memory_low_utilization_threshold: 20
+pods_low_utilization_threshold: 20
 
-descheduler_pod_restart_threshold: 5
+cpu_low_utilization_target_threshold: 60
+memory_low_utilization_target_threshold: 60
+pods_low_utilization_target_threshold: 60
+
+descheduler_pod_restart_threshold: 5   
 descheduler_including_init_containers: true
 
 descheduler_evict_local_storage_pods: false
@@ -45,3 +49,8 @@ descheduler_tolerations:
   - key: "node-role.kubernetes.io/control-plane"
     operator: "Exists"
     effect: "NoSchedule"
+
+descheduler_priority_class_name: "system-cluster-critical"
+descheduler_service_account_create: true
+descheduler_rbac_create: true
+descheduler_service_monitor_enabled: false

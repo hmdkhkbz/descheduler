@@ -1,57 +1,54 @@
+kind: "{{ descheduler_kind | default('CronJob') }}"
+
+image:
+  repository: "{{ descheduler_image_repo | default('registry.k8s.io/descheduler/descheduler') }}"
+  tag: "{{ descheduler_image_tag | default('') }}"
+  pullPolicy: "{{ descheduler_image_pull_policy | default('IfNotPresent') }}"
+
 schedule: "{{ descheduler_schedule }}"
 
 cmdOptions:
-  v: {{ descheduler_log_verbosity }}
-  dry-run: {{ descheduler_dry_run | bool }}
-  {% if descheduler_evict_local_storage_pods %}evict-local-storage-pods: true{% endif %}
+  v: {{ descheduler_log_verbosity | default(3) }}
+  dry-run: {{ descheduler_dry_run | bool | lower }}
 
 tolerations:
-{% for tol in descheduler_tolerations %}
-  - {{ tol | to_nice_yaml(indent=4) | trim }}
-{% endfor %}
+{{ descheduler_tolerations | to_nice_yaml(indent=2) }}
 
 resources:
-  {{ descheduler_resources | to_nice_yaml(indent=2) | trim }}
+{{ descheduler_resources | to_nice_yaml(indent=2) }}
 
+deschedulerPolicyAPIVersion: "descheduler/v1alpha2"
 deschedulerPolicy:
-  evictableNamespaces:
-    exclude:
-{% for ns in descheduler_excluded_namespaces %}
-      - {{ ns }}
-{% endfor %}
-
-  strategies:
-
-    LowNodeUtilization:
-      enabled: true
-      params:
-        nodeResourceUtilizationThresholds:
-          {{ descheduler_low_utilization_thresholds | to_nice_yaml(indent=10) | trim }}
-
-    RemovePodsViolatingNodeAffinity:
-      enabled: true
-      params:
-        nodeAffinityType:
-          - requiredDuringSchedulingIgnoredDuringExecution
-
-    RemovePodsViolatingNodeTaints:
-      enabled: true
-
-    RemovePodsViolatingInterPodAntiAffinity:
-      enabled: true
-
-    RemovePodsViolatingTopologySpreadConstraint:
-      enabled: true
-      params:
-        constraints:
-          - DoNotSchedule
-
-    RemoveDuplicates:
-      enabled: true
-
-    RemovePodsHavingTooManyRestarts:
-      enabled: true
-      params:
-        podsHavingTooManyRestarts:
-          podRestartThreshold: {{ descheduler_pod_restart_threshold }}
-          includingInitContainers: {{ descheduler_including_init_containers | bool }}
+  profiles:
+    - name: default
+      pluginConfig:
+        - name: DefaultEvictor
+          args:
+            ignorePvcPods: true
+            evictLocalStoragePods: {{ descheduler_evict_local_storage_pods | default(true) | lower }}
+        - name: RemovePodsHavingTooManyRestarts
+          args:
+            podRestartThreshold: {{ descheduler_pod_restart_threshold | default(100) }}
+            includingInitContainers: {{ descheduler_including_init_containers | default(true) | lower }}
+        - name: LowNodeUtilization
+          args:
+            thresholds:
+              cpu: {{ cpu_low_utilization_threshold }}
+              memory: {{ memory_low_utilization_threshold }}
+              pods: {{ pods_low_utilization_threshold }}
+            targetThresholds:
+              cpu: {{ cpu_low_utilization_target_threshold }}
+              memory: {{ memory_low_utilization_target_threshold }}
+              pods: {{ pods_low_utilization_target_threshold }}
+      plugins:
+        balance:
+          enabled:
+            - RemoveDuplicates
+            - RemovePodsViolatingTopologySpreadConstraint
+            - LowNodeUtilization
+        deschedule:
+          enabled:
+            - RemovePodsHavingTooManyRestarts
+            - RemovePodsViolatingNodeTaints
+            - RemovePodsViolatingNodeAffinity
+            - RemovePodsViolatingInterPodAntiAffinity

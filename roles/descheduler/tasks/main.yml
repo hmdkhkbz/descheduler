@@ -79,3 +79,5 @@
             job_pods.resources and
             job_pods.resources | selectattr('status.phase','defined') |
             selectattr('status.phase','in',['Succeeded','Failed']) | list | length > 0
+  tags:
+    - k8s_descheduler

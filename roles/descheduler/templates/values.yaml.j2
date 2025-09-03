@@ -33,13 +33,13 @@ deschedulerPolicy:
         - name: LowNodeUtilization
           args:
             thresholds:
-              cpu: {{ cpu_low_utilization_threshold }}
-              memory: {{ memory_low_utilization_threshold }}
-              pods: {{ pods_low_utilization_threshold }}
+              cpu: {{ descheduler_cpu_low_utilization_threshold }}
+              memory: {{ descheduler_memory_low_utilization_threshold }}
+              pods: {{ descheduler_pods_low_utilization_threshold }}
             targetThresholds:
-              cpu: {{ cpu_low_utilization_target_threshold }}
-              memory: {{ memory_low_utilization_target_threshold }}
-              pods: {{ pods_low_utilization_target_threshold }}
+              cpu: {{ descheduler_cpu_low_utilization_target_threshold }}
+              memory: {{ descheduler_memory_low_utilization_target_threshold }}
+              pods: {{ descheduler_pods_low_utilization_target_threshold }}
       plugins:
         balance:
           enabled:

@@ -9,7 +9,7 @@ descheduler_atomic: true
 descheduler_kind: CronJob
 
 descheduler_image_repo: "registry.k8s.io/descheduler/descheduler"
-descheduler_image_tag: ""              
+descheduler_image_tag: "v0.33.0"              
 descheduler_image_pull_policy: IfNotPresent
 
 descheduler_schedule: "*/30 * * * *"

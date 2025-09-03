@@ -29,13 +29,13 @@ descheduler_excluded_namespaces:
   - kube-public
   - kube-node-lease
 
-cpu_low_utilization_threshold: 20
-memory_low_utilization_threshold: 20
-pods_low_utilization_threshold: 20
+descheduler_cpu_low_utilization_threshold: 20
+descheduler_memory_low_utilization_threshold: 20
+descheduler_pods_low_utilization_threshold: 20
 
-cpu_low_utilization_target_threshold: 60
-memory_low_utilization_target_threshold: 60
-pods_low_utilization_target_threshold: 60
+descheduler_cpu_low_utilization_target_threshold: 60
+descheduler_memory_low_utilization_target_threshold: 60
+descheduler_pods_low_utilization_target_threshold: 60
 
 descheduler_pod_restart_threshold: 5   
 descheduler_including_init_containers: true

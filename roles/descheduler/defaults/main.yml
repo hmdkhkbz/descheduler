@@ -2,7 +2,7 @@ descheduler_namespace: kube-system
 descheduler_release_name: descheduler
 descheduler_chart_repo_url: "https://kubernetes-sigs.github.io/descheduler/"
 descheduler_chart_ref: "descheduler"
-descheduler_chart_version: ""  
+descheduler_chart_version: "0.33.0"  
 descheduler_wait: true
 descheduler_atomic: true
 

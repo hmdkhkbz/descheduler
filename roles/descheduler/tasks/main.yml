@@ -1,4 +1,8 @@
 - name: Deploy and configure Kubernetes descheduler
+  delegate_to: "{{ groups['kube_control_plane'][0] }}"
+  run_once: true
+  tags:
+    - k8s_descheduler
   block:
     - name: Ensure target namespace exists
       kubernetes.core.k8s:
@@ -10,7 +14,7 @@
     - name: Render Helm values for descheduler
       ansible.builtin.template:
         src: values.yaml.j2
-        dest: "/tmp/.generated_descheduler_values.yaml"
+        dest: "/tmp/.generated_descheduler_values.yaml" 
         mode: "0644"
 
     - name: Deploy/upgrade descheduler via Helm
@@ -23,7 +27,7 @@
         wait: "{{ descheduler_wait }}"
         atomic: "{{ descheduler_atomic }}"
         values_files:
-          - "/tmp/.generated_descheduler_values.yaml"
+          - "/tmp/.generated_descheduler_values.yaml" 
         chart_repo_url: "{{ descheduler_chart_repo_url }}"
         state: present
       register: helm_result
@@ -79,5 +83,3 @@
             job_pods.resources and
             job_pods.resources | selectattr('status.phase','defined') |
             selectattr('status.phase','in',['Succeeded','Failed']) | list | length > 0
-  tags:
-    - k8s_descheduler
